@@ -1,0 +1,47 @@
+import asyncio
+import aiohttp
+from datetime import datetime, timedelta
+import sys
+
+
+def format_date(date):
+    return date.strftime('%d.%m.%Y')
+
+
+async def fetch_exchange_rates(session, date):
+    start_date=''
+    end_date=''
+    url = f"http://api.nbp.pl/api/exchangerates/tables/c/{start_date}{end_date}/?format=json"
+    try:
+        async with session.get(url) as response:
+            if response.status == 200:
+                data = await response.json()
+                exchange_data = {}
+                for rate in data[0]['rates']:
+                    if rate['code'] in ['EUR', 'USD']:
+                        exchange_data[rate['code']] = {
+                            'sale': rate['ask'],
+                            'purchase': rate['bid']
+                        }
+                return {format_date(date): exchange_data}
+            else:
+                return {format_date(date): 'Brak danych'}
+    except Exception as e:
+        return {format_date(date): f'Błąd: {e}'}
+
+
+async def main(days):
+    async with aiohttp.ClientSession() as session:
+        tasks = []
+        for day in range(days):
+            date = datetime.now() - timedelta(days=day)
+            tasks.append(fetch_exchange_rates(session, date))
+
+        results = await asyncio.gather(*tasks)
+        print(results)
+
+if __name__ == "__main__":
+    days = int(sys.argv[1])
+    asyncio.run(main(days))
+
+
