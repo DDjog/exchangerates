@@ -18,7 +18,7 @@ async def fetch_exchange_rates(session, date):
                 data = await response.json()
                 exchange_data = {}
                 for rate in data[0]['rates']:
-                    if rate['code'] in ['EUR', 'USD']:
+                    if rate['code'] == 'USD':
                         exchange_data[rate['code']] = {
                             'sale': rate['ask'],
                             'purchase': rate['bid']
